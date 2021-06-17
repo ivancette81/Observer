@@ -4,7 +4,7 @@
 class ISubscriber
 {
 public:
-	virtual void update(double price) = 0;
+	virtual void update(double * price) = 0;
 };
 
 class Subscriber1 : public ISubscriber
@@ -23,9 +23,9 @@ public:
 		return price.back();
 	}
 
-	void update(double newPrice)
+	void update(double * newPrice)
 	{
-		price.push_back(newPrice);
+		price.push_back(*newPrice);
 	}
 };
 
@@ -45,13 +45,18 @@ public:
 		return price;
 	}
 
-	void update(double newPrice)
+	void update(double *newPrice)
 	{
-		price = newPrice;
+		price = *newPrice;
 	}
 };
-
-class Publisher {
+class IPublisher
+{
+	virtual void attach(ISubscriber *)=0;
+	virtual void detach(ISubscriber *)=0;
+	virtual void notify(void *)=0;
+};
+class Publisher : public IPublisher {
 	std::list<ISubscriber*> subscribers;
 	int numSubscribers = 0;
 
@@ -65,10 +70,10 @@ public:
 		subscribers.remove(subscriber);
 	}
 
-	void notify(double price) {
+	void notify(void * price) {
 		for (std::list<ISubscriber*>::iterator it = subscribers.begin(); it !=subscribers.end();it++)
 		{
-				(*it)->update(price);
+				(*it)->update((double *)price);
 		}
 	}
 };
@@ -86,14 +91,16 @@ TEST(TestHappyPath, HappyPath) {
 	adapterBLB.attach(Metamarket);
 	adapterBLB.attach(APIApp);
 
-	adapterBLB.notify(100.12);
+	double price = 100.12;
+	adapterBLB.notify((void *)&price);
 
 	EXPECT_DOUBLE_EQ(((Subscriber1*)Metamarket)->getLastPrice(), 100.12);
 	EXPECT_DOUBLE_EQ(((Subscriber2*)APIApp)->getPrice(), 100.12);
 
 	adapterBLB.detach(Metamarket);
 
-	adapterBLB.notify(100.15);
+	price = 100.15;
+	adapterBLB.notify((void *)&price);
 
 	EXPECT_DOUBLE_EQ(((Subscriber1*)Metamarket)->getLastPrice(), 100.12);
 	EXPECT_DOUBLE_EQ(((Subscriber2*)APIApp)->getPrice(), 100.15);
