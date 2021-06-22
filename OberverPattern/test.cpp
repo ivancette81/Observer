@@ -52,6 +52,7 @@ public:
 };
 class IPublisher
 {
+public:
 	virtual void attach(ISubscriber *)=0;
 	virtual void detach(ISubscriber *)=0;
 	virtual void notify(void *)=0;
@@ -86,21 +87,21 @@ TEST(TestCaseName, TestName) {
 TEST(TestHappyPath, HappyPath) {
 	ISubscriber *Metamarket = new Subscriber1();
 	ISubscriber *APIApp = new Subscriber2();
-	Publisher adapterBLB;
+	IPublisher *adapterBLB = new Publisher();
 	
-	adapterBLB.attach(Metamarket);
-	adapterBLB.attach(APIApp);
+	adapterBLB->attach(Metamarket);
+	adapterBLB->attach(APIApp);
 
 	double price = 100.12;
-	adapterBLB.notify((void *)&price);
+	adapterBLB->notify((void *)&price);
 
 	EXPECT_DOUBLE_EQ(((Subscriber1*)Metamarket)->getLastPrice(), 100.12);
 	EXPECT_DOUBLE_EQ(((Subscriber2*)APIApp)->getPrice(), 100.12);
 
-	adapterBLB.detach(Metamarket);
+	adapterBLB->detach(Metamarket);
 
 	price = 100.15;
-	adapterBLB.notify((void *)&price);
+	adapterBLB->notify((void *)&price);
 
 	EXPECT_DOUBLE_EQ(((Subscriber1*)Metamarket)->getLastPrice(), 100.12);
 	EXPECT_DOUBLE_EQ(((Subscriber2*)APIApp)->getPrice(), 100.15);
